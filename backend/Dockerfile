@@ -16,5 +16,5 @@ RUN mkdir -p /tmp/welllog_uploads
 
 EXPOSE 8000
 
-# Production: no --reload, use 1 worker to avoid table creation race conditions
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Production: Use the dynamic $PORT provided by Railway
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1

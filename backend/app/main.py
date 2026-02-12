@@ -56,6 +56,11 @@ app.include_router(interpretation.router)
 app.include_router(chat.router)
 
 
+@app.get("/")
+def read_root():
+    return {"message": "Well Log Analyzer API is running successfully!"}
+
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "service": "Well Log Analyzer API"}
