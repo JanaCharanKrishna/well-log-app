@@ -6,6 +6,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
 
+from sqlalchemy import text
 from app.config import settings
 from app.database import engine, Base
 from app.routers import wells, interpretation, chat
@@ -62,8 +63,30 @@ def read_root():
 
 
 @app.get("/api/health")
-def health_check():
-    return {"status": "ok", "service": "Well Log Analyzer API"}
+def health_check(db: Session = Depends(get_db)):
+    status = {"status": "ok", "database": "unknown", "s3": "unknown"}
+    
+    # Test DB
+    try:
+        db.execute(text("SELECT 1"))
+        status["database"] = "connected"
+    except Exception as e:
+        status["database"] = f"error: {str(e)}"
+        status["status"] = "error"
+
+    # Test S3
+    try:
+        from app.services.s3_service import s3_service
+        # Just try to see if client exists or list (no-op)
+        if s3_service.s3:
+            status["s3"] = "initialized"
+        else:
+            status["s3"] = "not_configured"
+    except Exception as e:
+        status["s3"] = f"error: {str(e)}"
+        status["status"] = "error"
+
+    return status
 
 
 # ── Optional: serve frontend build in single-container mode ──
