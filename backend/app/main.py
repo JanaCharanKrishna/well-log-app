@@ -41,17 +41,10 @@ app = FastAPI(
     openapi_url="/api/openapi.json",
 )
 
-# CORS
-origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
-# Ensure production URL is always included
-if "https://well-log-analyzer.up.railway.app" not in origins:
-    origins.append("https://well-log-analyzer.up.railway.app")
-
-if not origins:
-    origins = ["*"]
+# CORS - Allow all for communication reliability
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
