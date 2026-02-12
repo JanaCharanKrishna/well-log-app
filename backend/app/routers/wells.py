@@ -74,25 +74,32 @@ async def upload_las_file(file: UploadFile = File(...), db: Session = Depends(ge
 @router.get("", response_model=list[WellSummary])
 def list_wells(db: Session = Depends(get_db)):
     """List all uploaded wells."""
-    wells = db.query(Well).order_by(Well.uploaded_at.desc()).all()
-    result = []
-    for w in wells:
-        curve_count = db.query(Curve).filter(Curve.well_id == w.id).count()
-        result.append(
-            WellSummary(
-                id=w.id,
-                well_name=w.well_name,
-                original_filename=w.original_filename,
-                start_depth=w.start_depth,
-                stop_depth=w.stop_depth,
-                depth_unit=w.depth_unit,
-                location=w.location,
-                country=w.country,
-                uploaded_at=w.uploaded_at,
-                curve_count=curve_count,
+    logger.info("Fetching wells from database...")
+    try:
+        wells = db.query(Well).order_by(Well.uploaded_at.desc()).all()
+        logger.info(f"Found {len(wells)} wells. Counting curves...")
+        result = []
+        for w in wells:
+            curve_count = db.query(Curve).filter(Curve.well_id == w.id).count()
+            result.append(
+                WellSummary(
+                    id=w.id,
+                    well_name=w.well_name,
+                    original_filename=w.original_filename,
+                    start_depth=w.start_depth,
+                    stop_depth=w.stop_depth,
+                    depth_unit=w.depth_unit,
+                    location=w.location,
+                    country=w.country,
+                    uploaded_at=w.uploaded_at,
+                    curve_count=curve_count,
+                )
             )
-        )
-    return result
+        logger.info("Successfully fetched all wells.")
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching wells: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{well_id}", response_model=WellDetail)
