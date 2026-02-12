@@ -12,6 +12,11 @@ class Settings(BaseSettings):
         "postgresql://welllog:welllog123@localhost:5432/welllog_db",
     )
 
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if self.DATABASE_URL.startswith("postgres://"):
+            self.DATABASE_URL = self.DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
     # AWS S3
     AWS_ACCESS_KEY_ID: str = os.getenv("AWS_ACCESS_KEY_ID", "")
     AWS_SECRET_ACCESS_KEY: str = os.getenv("AWS_SECRET_ACCESS_KEY", "")
