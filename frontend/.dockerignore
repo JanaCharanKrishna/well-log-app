@@ -9,4 +9,3 @@ build/
 *.md
 .dockerignore
 Dockerfile
-nginx.conf
