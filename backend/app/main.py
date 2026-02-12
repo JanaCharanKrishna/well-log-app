@@ -79,7 +79,7 @@ def health_check(db: Session = Depends(get_db)):
     try:
         from app.services.s3_service import s3_service
         # Just try to see if client exists or list (no-op)
-        if s3_service.s3:
+        if s3_service.client:
             status["s3"] = "initialized"
         else:
             status["s3"] = "not_configured"
