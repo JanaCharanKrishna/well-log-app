@@ -16,8 +16,5 @@ RUN mkdir -p /tmp/welllog_uploads
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
-
 # Production: no --reload, use 1 worker to avoid table creation race conditions
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
