@@ -37,32 +37,28 @@ async def upload_las_file(file: UploadFile = File(...), db: Session = Depends(ge
         )
 
     # Parse the LAS file
-    logger.info(f"Parsing LAS file: {file.filename}...")
     try:
         parsed = parse_las_file(content)
-        logger.info(f"Parsed {len(parsed['curves'])} curves and {len(parsed['data_rows'])} rows.")
     except ValueError as e:
         logger.error(f"LAS parse error: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
     # Upload original file to S3
     s3_key = f"las-files/{uuid.uuid4().hex}_{file.filename}"
-    logger.info(f"Uploading to S3 (key: {s3_key})...")
     s3_success = s3_service.upload_bytes(content, s3_key)
     if not s3_success:
-        s3_key = None  # still continue without S3
-        logger.warning("S3 upload skipped or failed — continuing without S3.")
+        s3_key = None
+        logger.warning(f"S3 storage skipped for {file.filename}")
     else:
-        logger.info("S3 upload successful.")
+        logger.info(f"S3 backup created for {file.filename}")
 
     # Store in database
-    logger.info("Storing parsed data in database (PostgreSQL)...")
     try:
         well = store_parsed_las(db, parsed, file.filename, s3_key)
-        logger.info(f"Well data stored successfully (ID: {well.id}).")
+        logger.info(f"Processed well: {well.well_name} (ID: {well.id})")
     except Exception as e:
         logger.error(f"Database storage failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to store data: {e}")
+        raise HTTPException(status_code=500, detail="Internal storage error")
 
     return UploadResponse(
         well_id=well.id,

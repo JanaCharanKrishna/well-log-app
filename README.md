@@ -1,234 +1,94 @@
-# Well Log Analyzer
+# ⌬ Well Log Analyzer & AI Assistant
 
-A full-stack application for ingesting LAS well-log files, visualizing gas chromatography curves, and running AI-assisted geochemical interpretation.
+A high-performance, full-stack platform for **Petrophysical Data Analysis** and **Geochemical Interpretation**. Ingest LAS files, visualize complex gas chromatography curves, and leverage Large Language Models (LLMs) for automated log interpretation and anomaly detection.
 
-**Stack**: React 19 + Vite · FastAPI + SQLAlchemy · PostgreSQL · Groq / OpenAI · Docker + nginx
+[![Tech Stack](https://img.shields.io/badge/Stack-React_19_|_FastAPI_|_PostgreSQL_|_Groq-0ea5e9?style=for-the-badge)](https://github.com/JanaCharanKrishna/well-log-app)
+[![Deployment](https://img.shields.io/badge/Deployment-Docker_|_Railway-14b8a6?style=for-the-badge)](https://well-log-analyzer.up.railway.app)
 
 ---
 
-## Quick Start (Docker — recommended)
+## 🚀 Key Features
 
-### Prerequisites
+- **Advanced LAS Ingestion**: Precise parsing of industry-standard `.las` (Log ASCII Standard) files with automated metadata extraction.
+- **Interactive Visualization**: Real-time rendering of multiple GC curves (HC1-HC5, Total Gas, Ratios) with dynamic depth scaling and log-scale support.
+- **AI Geochemical Assistant**: 
+  - **Automated Interpretation**: One-click geochemical analysis of hydrocarbon signals and fluid behavior.
+  - **Context-Aware Chat**: Interactive LLM assistant that "sees" your current chart window to answer specific depth-range questions.
+- **Hybrid Storage Architecture**: PostgreSQL for structured petrophysical data + Amazon S3 for raw file persistence.
+- **Premium Design System**: Ultra-dense, "Deep Space" themed UI utilizing glassmorphism and modern dashboard aesthetics.
 
+---
+
+## 🛠 Architecture
+
+### Backend: FastAPI & Python 3.12
+- High-concurrency async processing for large dataset parsing.
+- **SQLAlchemy 2.0** ORM for complex structured queries.
+- **Groq/OpenAI Integration**: Real-time geochemical reasoning via Llama-3 (Groq) or GPT-4.
+
+### Frontend: React 19 & Vite
+- **Plotly.js**: Industrial-grade interactive chart rendering.
+- **Axios with Auto-Proxy**: Intelligent API routing for both local and cloud environments.
+- **Dense Layout Engine**: Optimized for multi-monitor interpretation workflows.
+
+### Infrastructure: Cloud-Native
+- **Nginx Reverse Proxy**: Performance-tuned for heavy binary file uploads.
+- **Docker Orchestration**: Containerized microservices architecture.
+- **Railway Deployment**: Continuous delivery with direct private networking.
+
+---
+
+## ⚡ Quick Start (Self-Hosted)
+
+### 1. Requirements
 - [Docker](https://docs.docker.com/get-docker/) ≥ 24
 - [Docker Compose](https://docs.docker.com/compose/install/) v2+
 
-### 1. Clone and configure
-
+### 2. Environment Configuration
+Create a `.env` in the `backend/` directory:
 ```bash
-git clone <your-repo-url> well-log-app
-cd well-log-app
+# Get your free key at https://console.groq.com/keys
+GROQ_API_KEY=your_key_here
 
-# Create backend environment file from example
-cp backend/.env.example backend/.env
+# Database connection (automatically handled by Docker Compose)
+DATABASE_URL=postgresql://welllog:welllog123@db:5432/welllog_db
 ```
 
-### 2. Add your AI API key
-
-Edit `backend/.env` and set **at least one** AI key:
-
-```dotenv
-# Free option — get a key at https://console.groq.com/keys
-GROQ_API_KEY=gsk_your_real_key_here
-
-# Or use OpenAI
-OPENAI_API_KEY=sk-your_real_key_here
-```
-
-> **Note**: The app works without an AI key — it will fall back to basic statistical analysis, but the AI interpretation and chat features require a valid key.
-
-### 3. Build and launch
-
+### 3. Launch
 ```bash
 docker compose up --build -d
 ```
-
-This starts three containers:
-
-| Container | Port | Description |
-|---|---|---|
-| `welllog-frontend` | **80** | nginx serving the React SPA |
-| `welllog-backend` | 8000 | FastAPI (proxied via nginx) |
-| `welllog-db` | 5432 | PostgreSQL 16 |
-
-### 4. Open the app
-
-Navigate to **http://localhost** in your browser.
-
-API docs are available at **http://localhost/api/docs**.
-
-### 5. Manage
-
-```bash
-# View logs
-docker compose logs -f
-
-# Stop everything
-docker compose down
-
-# Stop and remove all data (including database)
-docker compose down -v
-```
+The application will be available at **`http://localhost`**.
 
 ---
 
-## Development Setup (without Docker)
+## 📁 Repository Structure
 
-### Prerequisites
-
-- Python 3.12+
-- Node.js 20+
-- PostgreSQL 16 running locally
-
-### Backend
-
-```bash
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Configure
-cp .env.example .env
-# Edit .env with your database URL and API keys
-
-# Run
-uvicorn app.main:app --reload --port 8000
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend dev server runs on `http://localhost:5173` and proxies `/api` requests to the backend on port 8000 automatically.
-
----
-
-## Production Deployment
-
-### Docker Compose (self-hosted)
-
-The default `docker-compose.yml` is production-ready:
-
-- **Frontend**: Multi-stage build → nginx (port 80)
-- **Backend**: uvicorn with 2 workers (no `--reload`)
-- **Database**: PostgreSQL with persistent named volume
-- **Uploads**: Persisted in a named Docker volume
-
-Customize ports and credentials by setting environment variables:
-
-```bash
-# Optional: override defaults
-export FRONTEND_PORT=443
-export POSTGRES_PASSWORD=strong_random_password
-
-docker compose up --build -d
-```
-
-### Custom domain (reverse proxy)
-
-If deploying behind a domain with an external reverse proxy (Caddy, Traefik, etc.):
-
-1. Set `CORS_ORIGINS=https://your-domain.com` in `backend/.env`
-2. Point your reverse proxy to the frontend container (port 80)
-3. The nginx inside the frontend container already proxies `/api/` to the backend
-
-### Cloud deployment
-
-The Docker images work on any container platform:
-
-- **AWS ECS / Fargate**: Push images to ECR, create task definitions
-- **Google Cloud Run**: Deploy backend and frontend as separate services
-- **Railway / Render**: Connect your repo and configure build commands
-
----
-
-## Environment Variables
-
-### Backend (`backend/.env`)
-
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `DATABASE_URL` | Yes | `postgresql://welllog:welllog123@localhost:5432/welllog_db` | PostgreSQL connection string |
-| `GROQ_API_KEY` | No* | — | Groq API key (free, recommended) |
-| `OPENAI_API_KEY` | No* | — | OpenAI API key (fallback) |
-| `CORS_ORIGINS` | No | `http://localhost` | Comma-separated allowed origins |
-| `UPLOAD_DIR` | No | `/tmp/welllog_uploads` | Directory for uploaded LAS files |
-| `AWS_ACCESS_KEY_ID` | No | — | For S3 file storage (optional) |
-| `AWS_SECRET_ACCESS_KEY` | No | — | For S3 file storage (optional) |
-| `S3_BUCKET_NAME` | No | `well-log-files` | S3 bucket name |
-
-*\* At least one AI key is needed for AI interpretation and chat features.*
-
-### Docker Compose (root `.env` or shell environment)
-
-| Variable | Default | Description |
-|---|---|---|
-| `POSTGRES_USER` | `welllog` | Database user |
-| `POSTGRES_PASSWORD` | `welllog123` | Database password |
-| `POSTGRES_DB` | `welllog_db` | Database name |
-| `FRONTEND_PORT` | `80` | Host port for the frontend |
-| `BACKEND_PORT` | `8000` | Host port for the backend API |
-| `DB_PORT` | `5432` | Host port for PostgreSQL |
-
----
-
-## API Reference
-
-Interactive API docs are available at `/api/docs` when the backend is running.
-
-### Key endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/wells/upload` | Upload a LAS file |
-| `GET` | `/api/wells` | List all wells |
-| `GET` | `/api/wells/{id}` | Get well details + curves |
-| `GET` | `/api/wells/{id}/data` | Get curve data for charting |
-| `DELETE` | `/api/wells/{id}` | Delete a well |
-| `POST` | `/api/wells/{id}/interpret` | Run AI interpretation |
-| `POST` | `/api/chat` | Chat with AI about well data |
-| `GET` | `/api/health` | Health check |
-
----
-
-## Project Structure
-
-```
+```text
 well-log-app/
-├── docker-compose.yml        # Production orchestration
-├── .env.example              # Docker Compose env template
-│
-├── backend/
-│   ├── Dockerfile            # Python + uvicorn
-│   ├── requirements.txt
-│   ├── .env.example          # Backend env template
-│   └── app/
-│       ├── main.py           # FastAPI app + optional SPA serving
-│       ├── config.py         # Settings via pydantic-settings
-│       ├── database.py       # SQLAlchemy engine + session
-│       ├── models/           # ORM models
-│       ├── routers/          # API route handlers
-│       └── services/         # Business logic (AI, LAS parsing)
-│
-└── frontend/
-    ├── Dockerfile            # Multi-stage: Node build → nginx
-    ├── nginx.conf            # Production nginx config
-    ├── package.json
-    ├── vite.config.js
-    └── src/
-        ├── App.jsx           # Main application shell
-        ├── index.css         # Design system
-        ├── components/       # React components
-        └── services/api.js   # API client
+├── 📂 backend/           # FastAPI 0.115+, SQLAlchemy 2.0, Pydantic 2.0
+│   ├── 📂 app/           # Core logic (Routers, Models, Services)
+│   └── Dockerfile        # Uvicorn-optimized Python production image
+├── 📂 frontend/          # React 19, Vite, Plotly.js
+│   ├── 📂 src/           # Component library and API services
+│   └── Dockerfile        # Multi-stage build (Node build -> Nginx)
+└── docker-compose.yml    # Full stack orchestration (App + Postgres)
 ```
 
 ---
 
-## License
+## 📊 API Specification
 
-MIT
+The platform exports a fully documented REST API. Interactive documentation is available at `/api/docs` upon deployment.
+
+| Endpoint | Action | Logic |
+|---|---|---|
+| `POST /api/wells/upload` | **Ingest** | Multi-pass LAS parsing + S3 backup |
+| `GET /api/wells/{id}/data` | **Query** | High-performance curve data paging |
+| `POST /api/wells/{id}/interpret` | **AI** | Geochemical reasoning pipeline |
+| `POST /api/chat` | **LLM** | Context-injected assistant |
+
+---
+
+## ⚖ License
+Distributed under the **MIT License**. Created by [JanaCharanKrishna](https://github.com/JanaCharanKrishna).

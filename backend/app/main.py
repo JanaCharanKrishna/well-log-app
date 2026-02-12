@@ -65,27 +65,23 @@ def read_root():
 
 @app.get("/api/health")
 def health_check(db: Session = Depends(get_db)):
-    status = {"status": "ok", "database": "unknown", "s3": "unknown"}
+    status = {"status": "ok", "services": {"database": "online", "s3": "online"}}
     
-    # Test DB
+    # Check Database
     try:
         db.execute(text("SELECT 1"))
-        status["database"] = "connected"
-    except Exception as e:
-        status["database"] = f"error: {str(e)}"
-        status["status"] = "error"
+    except Exception:
+        status["services"]["database"] = "down"
+        status["status"] = "degraded"
 
-    # Test S3
+    # Check S3
     try:
         from app.services.s3_service import s3_service
-        # Just try to see if client exists or list (no-op)
-        if s3_service.client:
-            status["s3"] = "initialized"
-        else:
-            status["s3"] = "not_configured"
-    except Exception as e:
-        status["s3"] = f"error: {str(e)}"
-        status["status"] = "error"
+        if not s3_service.client:
+            status["services"]["s3"] = "not_configured"
+    except Exception:
+        status["services"]["s3"] = "error"
+        status["status"] = "degraded"
 
     return status
 
