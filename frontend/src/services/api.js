@@ -1,8 +1,12 @@
 import axios from 'axios';
 
+// Use current origin if relative, but favor the explicit production backend URL to avoid Nginx proxy issues
+const PRODUCTION_URL = 'https://well-log-app-production.up.railway.app/api';
+const baseURL = window.location.hostname === 'localhost' ? '/api' : PRODUCTION_URL;
+
 const api = axios.create({
-    baseURL: '/api',
-    timeout: 120000,
+    baseURL: baseURL,
+    timeout: 300000, // Matching Nginx 5-minute timeout
 });
 
 // ── Wells ───────────────────────────────────────
