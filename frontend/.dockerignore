@@ -1,0 +1,12 @@
+node_modules/
+dist/
+build/
+.git/
+.env
+.env.*
+.vscode/
+.idea/
+*.md
+.dockerignore
+Dockerfile
+nginx.conf

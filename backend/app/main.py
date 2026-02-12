@@ -1,0 +1,89 @@
+import logging
+from pathlib import Path
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+from contextlib import asynccontextmanager
+
+from app.config import settings
+from app.database import engine, Base
+from app.routers import wells, interpretation, chat
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Create DB tables on startup."""
+    logger.info("Creating database tables...")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables ready.")
+    yield
+    logger.info("Shutting down...")
+
+
+app = FastAPI(
+    title="Well Log Analyzer",
+    description=(
+        "A web-based system for ingesting LAS well-log files, "
+        "visualizing gas chromatography curves, and performing "
+        "AI-assisted interpretation."
+    ),
+    version="1.0.0",
+    lifespan=lifespan,
+    docs_url="/api/docs",
+    openapi_url="/api/openapi.json",
+)
+
+# CORS
+origins = [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
+if not origins:
+    origins = ["*"]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register API routers
+app.include_router(wells.router)
+app.include_router(interpretation.router)
+app.include_router(chat.router)
+
+
+@app.get("/api/health")
+def health_check():
+    return {"status": "ok", "service": "Well Log Analyzer API"}
+
+
+# ── Optional: serve frontend build in single-container mode ──
+# If a frontend/dist directory exists next to the backend, serve it.
+# In Docker this is handled by nginx, but this allows running everything
+# from a single process for simpler deployments.
+_frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+
+if _frontend_dist.is_dir():
+    assets_dir = _frontend_dist / "assets"
+    index_file = _frontend_dist / "index.html"
+
+    # Serve static assets (js, css, images) only when build assets exist.
+    if assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="static-assets")
+
+    @app.get("/{path:path}")
+    async def serve_spa(request: Request, path: str):
+        """Serve the SPA index.html for any non-API route."""
+        file_path = _frontend_dist / path
+        if file_path.is_file():
+            return FileResponse(file_path)
+        if index_file.is_file():
+            return FileResponse(index_file)
+        raise HTTPException(status_code=404, detail="Frontend build files not found.")

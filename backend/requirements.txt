@@ -1,0 +1,14 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+sqlalchemy==2.0.36
+alembic==1.14.1
+psycopg2-binary==2.9.10
+lasio==0.32
+pandas==2.2.3
+numpy==2.2.1
+boto3==1.36.4
+openai==1.59.9
+python-dotenv==1.0.1
+pydantic-settings==2.7.1
+pydantic==2.10.5

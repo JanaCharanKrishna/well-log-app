@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: welllog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-welllog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-welllog123}
+      POSTGRES_DB: ${POSTGRES_DB:-welllog_db}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-welllog}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: welllog-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    env_file:
+      - ./backend/.env
+    environment:
+      # Override DATABASE_URL to point at the db container
+      DATABASE_URL: postgresql://${POSTGRES_USER:-welllog}:${POSTGRES_PASSWORD:-welllog123}@db:5432/${POSTGRES_DB:-welllog_db}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - upload_data:/tmp/welllog_uploads
+
+  frontend:
+    build: ./frontend
+    container_name: welllog-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  upload_data:
