@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.config import settings
-from app.database import engine, Base
+from app.database import engine, Base, get_db
 from app.routers import wells, interpretation, chat
 
 # Configure logging
